@@ -97,8 +97,7 @@ kable(incubators_content %>%
                transmute(Incubator = creator,
                          Deutsch = de,
                          English = en), caption = "Articles for Each Language by Incubator") %>% 
-  kable_styling(latex_options = "striped") %>% 
-  save_kable(file = "artefacts/articles_language_counts_by_incubator.png")
+  kable_styling()
 
 # Heatmap of language use distribution per article
 incubators_content %>% 
