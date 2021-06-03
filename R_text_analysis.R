@@ -55,15 +55,6 @@ base_data <- base_data %>% select(!c(Score, img_link))
 base_data_en <- base_data_en %>% select(!c(LanguageCode, Score, img_link))
 base_data_de <- base_data_de %>% select(!c(LanguageCode, Score, img_link))
 
-
-# Token Analysis ----------------------------------------------------------
-
-knitr::kable(as.data.frame(table(base_data$creator)) %>% 
-               rename("Incubator" = Var1,
-                      "Count of Articles" = Freq),
-             caption = "Looking at how many articles we have per incubator") %>% 
-  kable_styling()
-
 stop_words_en <- stop_words_en %>% 
   add_row(word = "it’s") %>%  # specify custom stopwords
   add_row(word = "don’t") %>% 
@@ -84,6 +75,14 @@ unnested_data_en <- base_data_en %>%
 unnested_data_de <- base_data_de %>% 
   unnest_tokens(word, content) %>%
   anti_join(stop_words_de)
+
+# Token Analysis ----------------------------------------------------------
+
+knitr::kable(as.data.frame(table(base_data$creator)) %>% 
+               rename("Incubator" = Var1,
+                      "Count of Articles" = Freq),
+             caption = "Looking at how many articles we have per incubator") %>% 
+  kable_styling()
 
 knitr::kable(unnested_data %>%
                count(word, sort = TRUE) %>% 
@@ -218,8 +217,10 @@ unnested_data %>%
   head(10) %>% 
   mutate(word = reorder(word, n)) %>% 
   ggplot(aes(n, word)) +
-  geom_col(show.legend = FALSE) +
-  labs(y = NULL, x = 'Frequency', title = 'Top 10 Most Frequent Words for TheVentury')
+  geom_col(show.legend = FALSE, fill = color[9]) +
+  labs(y = NULL, x = 'Frequency', title = 'Top 10 Most Frequent Words for The Ventury')
+ggsave(path = "artefacts/", 
+       filename = "R_most_frequent_words_Ventury.png")
 
 # plot top 10 words for AgroInnovationLab
 unnested_data %>% 
@@ -228,8 +229,10 @@ unnested_data %>%
   top_n(10, n) %>% 
   mutate(word = reorder(word, n)) %>% 
   ggplot(aes(n, word)) +
-  geom_col(show.legend = FALSE) +
-  labs(y = NULL, x = 'Frequency', title = 'Top 10 Most Frequent Words for AgroInnovationLab')
+  geom_col(show.legend = FALSE, fill = color[3]) +
+  labs(y = NULL, x = 'Frequency', title = 'Top 10 Most Frequent Words for Agro Innovation Lab')
+ggsave(path = "artefacts/", 
+       filename = "R_most_frequent_words_AgroInnovation.png")
 
 # Word Correlations -------------------------------------------------------
 
@@ -245,10 +248,13 @@ test_cor <- unnested_data_en %>%
 # replace NA with 0 for correct correlation evaluation
 test_cor[is.na(test_cor)] <- 0
 
-ggcorr(test_cor, 
+ggcorr(test_cor[,c(4,1:3,5,7:11,6)], # change ordering so that they fit better
        midpoint = 0.5, 
-       limits = c(0,1)) +
+       limits = c(0,1),
+       label_size = 2) +
   ggtitle("Comparing English Word-Use Correlation between Incubators")
+ggsave(path = "artefacts/", 
+       filename = "R_incubators_token_correlation_EN.png")
 
 ## German
 test_cor <- unnested_data_de %>% 
@@ -266,3 +272,7 @@ ggcorr(test_cor,
        midpoint = 0.5, 
        limits = c(0,1)) +
   ggtitle("Comparing German Word-Use Correlation between Incubators")
+ggsave(path = "artefacts/", 
+       filename = "R_incubators_token_correlation_DE.png")
+
+
