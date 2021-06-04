@@ -264,7 +264,7 @@ incubators_contentANDimages %>%
                                   hjust = 0.5 ))
 ggsave(path = "artefacts/", 
        filename = "AWS_image_entities_tf_idf_treemap.png")
-# Scrap -------------------------------------------------------------------
+# Appendix/Scrap ------------------------------------------------------------
 
 # tf_idf
 incubators_contentANDimages %>% 
