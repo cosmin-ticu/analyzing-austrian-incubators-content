@@ -275,4 +275,54 @@ ggcorr(test_cor,
 ggsave(path = "artefacts/", 
        filename = "R_incubators_token_correlation_DE.png")
 
+# Sentiment analysis ------------------------------------------------------
+
+
+# Topic modeling ----------------------------------------------------------
+
+
+# Word co-occurrences -----------------------------------------------------
+
+## Titles
+# English
+set.seed(1234)
+base_data_en %>% 
+  unnest_tokens(word, article_title) %>% 
+  anti_join(stop_words_en) %>% 
+  pairwise_count(word, article_URL, sort = TRUE, upper = FALSE) %>%
+  filter(n >= 3) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme(legend.position = "none") +
+  ggtitle("Word Co-Occurrence Map for Incubators' English Article Titles")
+ggsave(path = "artefacts/", 
+       filename = "R_incubators_title_tokens_co-occurence_EN.png")
+
+# German
+set.seed(1234)
+base_data_de %>% 
+  unnest_tokens(word, article_title) %>% 
+  anti_join(stop_words_de) %>% 
+  pairwise_count(word, article_URL, sort = TRUE, upper = FALSE) %>%
+  filter(n >= 3) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme(legend.position = "none") +
+  ggtitle("Word Co-Occurrence Map for Incubators' German Article Titles")
+ggsave(path = "artefacts/", 
+       filename = "R_incubators_title_tokens_co-occurence_DE.png")
+
+# TF-IDF ------------------------------------------------------------------
+
+
+# N-gram analysis ---------------------------------------------------------
+
 
