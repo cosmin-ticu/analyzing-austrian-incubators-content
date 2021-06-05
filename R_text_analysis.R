@@ -722,17 +722,17 @@ ggsave(path = "artefacts/",
 knitr::kable(
   unnested_data_en %>%
     inner_join(nrc) %>% 
-    filter(sentiment == "anticipation") %>% 
-    count(word, sort = T) %>% 
-    head(15), 
-  caption = 'Top 15 English Words by Frequency for the "Anticipation" Sentiment') %>% 
+    count(sentiment, sort = T), 
+  caption = "NRC sentiments ranked by word count") %>% 
   kable_styling()
 
 knitr::kable(
   unnested_data_en %>%
     inner_join(nrc) %>% 
-    count(sentiment, sort = T), 
-  caption = "NRC sentiments ranked by word count") %>% 
+    filter(sentiment == "anticipation") %>% 
+    count(word, sort = T) %>% 
+    head(15), 
+  caption = 'Top 15 English Words by Frequency for the "Anticipation" Sentiment') %>% 
   kable_styling()
 
 ## Top positive/negative words - bing
@@ -962,7 +962,7 @@ unnested_data_en %>%
   inner_join(afinn, by = "word") %>%
   group_by(word) %>%
   summarize(contribution = sum(n * value)) %>%
-  top_n(15, abs(contribution)) %>%
+  top_n(20, abs(contribution)) %>%
   mutate(word = reorder(word, contribution)) %>%
   ggplot(aes(word, contribution, fill = contribution > 0)) +
   geom_col(show.legend = F) +
@@ -980,7 +980,7 @@ unnested_data_de %>%
   mutate(value = ifelse(sentiment == "negative", -1, 1)) %>% 
   group_by(word) %>%
   summarize(contribution = sum(n * value)) %>%
-  top_n(15, abs(contribution)) %>%
+  top_n(20, abs(contribution)) %>%
   mutate(word = reorder(word, contribution)) %>%
   ggplot(aes(word, contribution, fill = contribution > 0)) +
   geom_col(show.legend = F) +
@@ -990,6 +990,137 @@ unnested_data_de %>%
   scale_fill_manual(values = c(color[6],color[4]))
 ggsave(path = "artefacts/", 
        filename = "R_positivity_word_comparison_DE.png")
+
+# Most frequent words by their business sentiment
+unnested_data_en %>%
+  count(word) %>%
+  inner_join(loughran, by = "word") %>%
+  group_by(sentiment) %>%
+  top_n(5, n) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col(aes(fill = sentiment)) +
+  coord_flip() +
+  facet_wrap(~ sentiment, scales = "free") +
+  labs(x = NULL,
+       y = "Frequency of word in the business-oriented categories",
+       title = "Comparing Business Lexicon Positivity Score Between Most Frequent English Words") +
+  scale_fill_manual(values = c(color[1],color[7],color[6],color[4],color[9],color[12])) +
+  theme(legend.position = "none")
+ggsave(path = "artefacts/", 
+       filename = "R_business_lexicon_sentiment_comparison_EN.png")
+
+# Loughran positivity percentage of positive+negative per incubator
+unnested_data_en %>%
+  inner_join(loughran, by = "word") %>%
+  count(sentiment, creator) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(score = (positive - negative) / (positive + negative)) %>%
+  mutate(creator = reorder(creator, score)) %>%
+  ggplot(aes(creator, score, fill = score > 0)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(x = NULL,
+       y = "Positivity score among news articles",
+       title = "Comparing Loughran Positivity Percentage Between Incubators") +
+  scale_y_continuous(labels = scales::percent) 
+ggsave(path = "artefacts/", 
+       filename = "R_loughran_sentiment_incubator_comparison_EN.png")
+
+## Comparison of sentiment per incubator across all lexicons - standardizing by neutrality
+# EN
+bind_rows(unnested_data_en %>% 
+            left_join(afinn) %>%
+            mutate(sentiment = ifelse(is.na(value), "neutral", 
+                                      ifelse(value < 0, "negative", 
+                                             "positive")))%>%
+            count(index = creator, sentiment)%>%
+            spread(sentiment, n, fill = 0) %>%
+            mutate(sentiment = positive - negative) %>% 
+            mutate(method = "AFINN"),
+          unnested_data_en %>%
+            left_join(bing) %>%
+            mutate(sentiment = ifelse(is.na(sentiment), "neutral", sentiment)) %>% 
+            count(index = creator, sentiment) %>%
+            spread(sentiment, n, fill = 0) %>%
+            mutate(sentiment = positive - negative) %>% 
+            mutate(method = "Bing et al."),
+          unnested_data_en %>% 
+            left_join(nrc %>% filter(sentiment %in% c("positive",
+                                                      "negative"))) %>%
+            mutate(sentiment = ifelse(is.na(sentiment), "neutral", sentiment)) %>% 
+            count(index = creator, sentiment) %>%
+            spread(sentiment, n, fill = 0) %>%
+            mutate(sentiment = positive - negative) %>% 
+            mutate(method = "NRC"),
+          unnested_data_en %>% 
+            left_join(loughran %>% filter(sentiment %in% c("positive",
+                                                      "negative"))) %>%
+            mutate(sentiment = ifelse(is.na(sentiment), "neutral", sentiment)) %>% 
+            count(index = creator, sentiment) %>%
+            spread(sentiment, n, fill = 0) %>%
+            mutate(sentiment = positive - negative) %>% 
+            mutate(method = "Loughran")) %>% 
+  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+  select(-c(negative, positive, neutral, sentiment)) %>% 
+  bind_rows(base_data_en %>%
+              group_by(creator) %>% 
+              summarise(positive = mean(positive),
+                        negative = mean(negative)) %>% 
+              mutate(pct_diff_pos_neg = positive - negative,
+                     method = "AWS",
+                     index = creator) %>% 
+              select(c(index, pct_diff_pos_neg, method))) %>% 
+  mutate(creator = reorder(index, pct_diff_pos_neg)) %>%
+  ggplot(aes(creator, pct_diff_pos_neg, fill = method)) +
+  geom_bar(stat = "identity",
+           # show.legend = FALSE,
+           position = position_dodge()) +
+  # coord_flip() +
+  labs(x = NULL,
+       y = "Positivity % of all sentiments",
+       title = "Comparing Positivity Percentage of Each English Lexicon Between Incubators") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c(color[1],color[3],color[5],color[7],color[9])) +
+  scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
+                                                      ' \\1', x), width = 1))
+ggsave(path = "artefacts/", 
+       filename = "R_all_lexicon_sentiment_incubator_comparison_EN.png")
+
+# DE
+unnested_data_de %>%
+  left_join(german_sentiment) %>%
+  mutate(sentiment = ifelse(is.na(sentiment), "neutral", sentiment)) %>% 
+  count(index = creator, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>% 
+  mutate(method = "GermanSentiment") %>% 
+  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+  select(-c(negative, positive, neutral, sentiment)) %>% 
+  bind_rows(base_data_de %>%
+              group_by(creator) %>% 
+              summarise(positive = mean(positive),
+                        negative = mean(negative)) %>% 
+              mutate(pct_diff_pos_neg = positive - negative,
+                     method = "AWS",
+                     index = creator) %>% 
+              select(c(index, pct_diff_pos_neg, method))) %>% 
+  mutate(creator = reorder(index, pct_diff_pos_neg)) %>%
+  ggplot(aes(creator, pct_diff_pos_neg, fill = method)) +
+  geom_bar(stat = "identity",
+           # show.legend = FALSE,
+           position = position_dodge()) +
+  # coord_flip() +
+  labs(x = NULL,
+       y = "Positivity % of all sentiments",
+       title = "Comparing Positivity Percentage of Each German Lexicon Between Incubators") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c(color[3],color[10])) +
+  scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
+                                                      ' \\1', x), width = 1))
+ggsave(path = "artefacts/", 
+       filename = "R_all_lexicon_sentiment_incubator_comparison_DE.png")
 
 # Appendix/Scrap ----------------------------------------------------------
 
