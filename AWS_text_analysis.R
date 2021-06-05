@@ -21,6 +21,7 @@ incubators_content <-
   read.csv("https://raw.githubusercontent.com/cosmin-ticu/scraping-austrian-incubators/main/data/incubators_raw_content_languages_sentiment.csv", 
            fileEncoding = "utf-8")
 
+# Create separate columns for each language to visualize likelihood differences
 languages <- incubators_content %>% select(c(article_URL, LanguageCode, Score))
 languages <- dcast(languages, article_URL ~ LanguageCode, value.var = "Score")
 languages <- languages %>% 
@@ -121,6 +122,44 @@ incubators_content %>%
   scale_fill_manual(values = c(color[1],color[7]))
 ggsave(path = "artefacts/", 
        filename = "language_heatmap.png")
+
+## Heatmap of language use distribution per article
+# read in the ad-hoc data with title language detection
+incubators_content_titles_lang <- 
+  read.csv("https://raw.githubusercontent.com/cosmin-ticu/scraping-austrian-incubators/main/data/incubators_raw_content_languages_titles(ad-hoc).csv", 
+           fileEncoding = "utf-8")
+
+# Create separate columns for each language to visualize likelihood differences
+languages_title <- incubators_content_titles_lang %>% select(c(article_URL, LanguageCode, Score))
+languages_title <- dcast(languages_title, article_URL ~ LanguageCode, value.var = "Score")
+languages_title <- languages_title %>% 
+  mutate(en = ifelse(is.na(en), 1 - de, en),
+         de = ifelse(is.na(de), 1 - en, de))
+
+incubators_content_titles_lang <- incubators_content_titles_lang %>% select(-Score)
+
+incubators_content_titles_lang <- inner_join(incubators_content_titles_lang, languages_title)
+incubators_content_titles_lang %>% 
+  select(creator, article_URL, en, de) %>% 
+  mutate(en_de = en - de,
+         English = en,
+         Deutsch = de) %>% 
+  gather(., key = Language, value = language_score, c(English,Deutsch)) %>% 
+  ggplot(aes(reorder(article_URL, en_de), language_score, fill = Language)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, 
+       y = NULL,
+       title = "Language Heatmap between English & German Use in Article Titles") +
+  theme_void()  + 
+  theme(legend.position = "bottom",
+        panel.grid.minor.x = element_blank(),
+        plot.title = element_text(size = 12, 
+                                  face = "bold", 
+                                  hjust = 0.5 )) +
+  scale_fill_manual(values = c(color[1],color[7]))
+ggsave(path = "artefacts/", 
+       filename = "language_heatmap_titles.png")
 
 # Sentiment EDA -----------------------------------------------------------
 

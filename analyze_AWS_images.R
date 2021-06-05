@@ -9,6 +9,7 @@ library(wordcloud)
 library(tidytext)
 library(ggcharts)
 library(treemap)
+library(magrittr)
 theme_set(theme_bw() + 
             theme(panel.grid.minor.x = element_blank(),
                   plot.title = element_text(size = 12, 
@@ -37,7 +38,6 @@ incubators_contentANDimages <- merge(incubators_content,
 # Image label analysis ----------------------------------------------------
 
 ## Most frequent entities and their positivity-negativity score (count-weighted contribution)
-
 # Negativity DF
 image_objects_negativity <- incubators_contentANDimages %>%
   group_by(img_object) %>% 
@@ -80,7 +80,6 @@ ggsave(path = "artefacts/",
        filename = "AWS_image_entities_postivity_score.png")
 
 ## Most sentimentally-loaded entities and their mean percentage positivity-negativity 
-
 # Negativity DF
 image_objects_negativity <- incubators_contentANDimages %>%
   group_by(img_object) %>% 
@@ -205,7 +204,7 @@ incubators_contentANDimages %>%
             alpha = .3) +
   scale_fill_identity() +
   # set thicker lines for group borders
-  scale_size(range = range(tm_plot_data$primary_group)) +
+  scale_size(range = range(c(0.5,1.2))) +
   # add labels
   ggfittext::geom_fit_text(aes(label = img_object), min.size = 1) +
   # options
@@ -264,6 +263,7 @@ incubators_contentANDimages %>%
                                   hjust = 0.5 ))
 ggsave(path = "artefacts/", 
        filename = "AWS_image_entities_tf_idf_treemap.png")
+
 # Appendix/Scrap ------------------------------------------------------------
 
 # tf_idf
