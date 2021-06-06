@@ -887,7 +887,9 @@ bind_rows(unnested_data_en %>%
               spread(sentiment, n, fill = 0) %>%
               mutate(sentiment = positive - negative) %>% 
               mutate(method = "NRC")) %>% 
-  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+  mutate(positive = positive / (positive + negative + neutral),
+         negative = negative / (positive + negative + neutral)) %>% 
+  mutate(pct_diff_pos_neg = positive - negative) %>% 
   select(-c(negative, positive, neutral, sentiment)) %>% 
   bind_rows(base_data_en %>%
                select(c(ID, positive, negative)) %>% 
@@ -902,7 +904,7 @@ bind_rows(unnested_data_en %>%
              scales = "free_y") +
   labs( x = NULL, 
         y = "Sentiment Score", 
-        title = "Positivity-Negativity Percentage Difference Between the English Lexicons & AWS on Our Entire Sample") +
+        title = "Positivity-Negativity Percentage Difference Between the English Lexicons & AWS on Entire Sample") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank()) +
   scale_y_continuous(labels = scales::percent)
@@ -917,7 +919,9 @@ unnested_data_de %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative) %>% 
   mutate(method = "GermanSentiment") %>% 
-  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+  mutate(positive = positive / (positive + negative + neutral),
+         negative = negative / (positive + negative + neutral)) %>% 
+  mutate(pct_diff_pos_neg = positive - negative) %>% 
   select(-c(negative, positive, neutral, sentiment)) %>% 
   bind_rows(base_data_de %>%
               select(c(ID, positive, negative)) %>% 
@@ -932,7 +936,7 @@ unnested_data_de %>%
              scales = "free_y") +
   labs( x = NULL, 
         y = "Sentiment Score", 
-        title = "Positivity-Negativity Percentage Difference Between the German Lexicon & AWS on Our Entire Sample") +
+        title = "Positivity-Negativity Percentage Difference Between the German Lexicon & AWS on Entire Sample") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank()) +
   scale_y_continuous(labels = scales::percent)
@@ -1064,8 +1068,10 @@ bind_rows(unnested_data_en %>%
             count(index = creator, sentiment) %>%
             spread(sentiment, n, fill = 0) %>%
             mutate(sentiment = positive - negative) %>% 
-            mutate(method = "Loughran")) %>% 
-  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+            mutate(method = "Loughran et al.")) %>% 
+  mutate(positive = positive / (positive + negative + neutral),
+         negative = negative / (positive + negative + neutral)) %>% 
+  mutate(pct_diff_pos_neg = positive - negative) %>% 
   select(-c(negative, positive, neutral, sentiment)) %>% 
   bind_rows(base_data_en %>%
               group_by(creator) %>% 
@@ -1082,12 +1088,13 @@ bind_rows(unnested_data_en %>%
            position = position_dodge()) +
   # coord_flip() +
   labs(x = NULL,
-       y = "Positivity % of all sentiments",
-       title = "Comparing Positivity Percentage of Each English Lexicon Between Incubators") +
+       y = "% Difference Positive-Negative of all sentiments",
+       title = "Comparing Positivity-Negativity Percentage Differences of Each English Lexicon Between Incubators") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(values = c(color[1],color[3],color[5],color[7],color[9])) +
   scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
-                                                      ' \\1', x), width = 1))
+                                                      ' \\1', x), width = 1)) +
+  theme(legend.position = "bottom")
 ggsave(path = "artefacts/", 
        filename = "R_all_lexicon_sentiment_incubator_comparison_EN.png")
 
@@ -1098,8 +1105,10 @@ unnested_data_de %>%
   count(index = creator, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative) %>% 
-  mutate(method = "GermanSentiment") %>% 
-  mutate(pct_diff_pos_neg = sentiment / (positive + negative + neutral)) %>% 
+  mutate(method = "GermanSentiment")  %>% 
+  mutate(positive = positive / (positive + negative + neutral),
+         negative = negative / (positive + negative + neutral)) %>% 
+  mutate(pct_diff_pos_neg = positive - negative) %>% 
   select(-c(negative, positive, neutral, sentiment)) %>% 
   bind_rows(base_data_de %>%
               group_by(creator) %>% 
@@ -1116,12 +1125,13 @@ unnested_data_de %>%
            position = position_dodge()) +
   # coord_flip() +
   labs(x = NULL,
-       y = "Positivity % of all sentiments",
-       title = "Comparing Positivity Percentage of Each German Lexicon Between Incubators") +
+       y = "% Difference Positive-Negative of all sentiments",
+       title = "Comparing Positivity-Negativity Percentage Differences of Each German Lexicon Between Incubators") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(values = c(color[3],color[10])) +
   scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
-                                                      ' \\1', x), width = 1))
+                                                      ' \\1', x), width = 1)) +
+  theme(legend.position = "bottom")
 ggsave(path = "artefacts/", 
        filename = "R_all_lexicon_sentiment_incubator_comparison_DE.png")
 
