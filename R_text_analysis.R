@@ -32,7 +32,7 @@ stop_words_de <- read.csv("https://raw.githubusercontent.com/stopwords-iso/stopw
 stop_words_en <- stop_words[1] # english stopwords dataset
 color <- c(brewer.pal( 12, "Paired" ),
            brewer.pal( 3, "Set2" ))
-?sentiments
+
 # Load in the data --------------------------------------------------------
 
 incubators_content <- 
@@ -656,7 +656,7 @@ ggsave(path = "artefacts/",
 set.seed(1234)
 unnested_data_en %>% 
   pairwise_count(word, article_URL, sort = TRUE, upper = FALSE) %>%
-  filter(n >= 100) %>%
+  filter(n <= 50 | n >= 40) %>%
   graph_from_data_frame() %>%
   ggraph(layout = "fr") +
   geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
@@ -967,7 +967,8 @@ unnested_data_en %>%
   ggplot(aes(word, contribution, fill = contribution > 0)) +
   geom_col(show.legend = F) +
   coord_flip() +
-  labs(y = "Frequency of word * AFINN score",
+  labs(x = NULL,
+       y = "Frequency of word * AFINN score",
        title = "Comparing AFINN Positivity Score Between Most Frequent English Words") +
   scale_fill_manual(values = c(color[6],color[4]))
 ggsave(path = "artefacts/", 
@@ -985,7 +986,8 @@ unnested_data_de %>%
   ggplot(aes(word, contribution, fill = contribution > 0)) +
   geom_col(show.legend = F) +
   coord_flip() +
-  labs(y = "Frequency of word * German Lexicon score",
+  labs(x = NULL, 
+       y = "Frequency of word * German Lexicon score",
        title = "Comparing German Lexicon Positivity Score Between Most Frequent German Words") +
   scale_fill_manual(values = c(color[6],color[4]))
 ggsave(path = "artefacts/", 
@@ -1024,7 +1026,8 @@ unnested_data_en %>%
   labs(x = NULL,
        y = "Positivity score among news articles",
        title = "Comparing Loughran Positivity Percentage Between Incubators") +
-  scale_y_continuous(labels = scales::percent) 
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = c(color[6],color[4]))
 ggsave(path = "artefacts/", 
        filename = "R_loughran_sentiment_incubator_comparison_EN.png")
 
