@@ -32,7 +32,7 @@ stop_words_de <- read.csv("https://raw.githubusercontent.com/stopwords-iso/stopw
 stop_words_en <- stop_words[1] # english stopwords dataset
 color <- c(brewer.pal( 12, "Paired" ),
            brewer.pal( 3, "Set2" ))
-
+?sentiments
 # Load in the data --------------------------------------------------------
 
 incubators_content <- 
@@ -107,7 +107,7 @@ knitr::kable(as.data.frame(table(base_data$creator)) %>%
 
 knitr::kable(unnested_data %>%
                count(word, sort = TRUE) %>% 
-               head(20)%>% 
+               head(10)%>% 
                rename("Word" = word,
                       "Frequency" = n), 
              caption = "Top words all around") %>% 
@@ -115,7 +115,7 @@ knitr::kable(unnested_data %>%
 
 knitr::kable(unnested_data_de %>%
                count(word, sort = TRUE) %>% 
-               head(20)%>% 
+               head(10)%>% 
                rename("Word" = word,
                       "Frequency" = n), 
              caption = "Top german words all around") %>% 
@@ -366,11 +366,11 @@ unnested_data_filtered_incubators %>%
 ggsave(path = "artefacts/", 
        filename = "R_tf-idf_incubator_content_part2.png")
 
-## Create treemap of all entities with more than 5 occurences
-incubators_contentANDimages %>% 
-  count(creator, img_object) %>% 
-  filter(n > 5) %>% 
-  treemap(., index = c("creator", "img_object"), 
+## Create treemap of all words with more than 5 occurences
+unnested_data_filtered_incubators %>% 
+  count(creator, word) %>% 
+  filter(n > 50) %>% 
+  treemap(., index = c("creator", "word"), 
           vSize = "n", vColor = "creator") %>% 
   extract2("tm") %>% 
   # calculate end coordinates with height and width
@@ -380,52 +380,7 @@ incubators_contentANDimages %>%
   mutate(x = (x0+x1)/2,
          y = (y0+y1)/2) %>%
   # mark primary groupings and set boundary thickness
-  mutate(primary_group = ifelse(is.na(img_object), 1.2, .5)) %>% 
-  ggplot(aes(xmin = x0, ymin = y0, xmax = x1, ymax = y1)) + 
-  # add fill and borders for groups and subgroups
-  geom_rect(aes(fill = color, size = primary_group),
-            show.legend = FALSE,
-            color = "black", 
-            alpha = .3) +
-  scale_fill_identity() +
-  # set thicker lines for group borders
-  scale_size(range = range(tm_plot_data$primary_group)) +
-  # add labels
-  ggfittext::geom_fit_text(aes(label = img_object), min.size = 1) +
-  # options
-  scale_x_continuous(expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  theme_void() +
-  ggtitle("Count Treemap of Image Entities by (Unlabeled) Incubators") + 
-  theme(panel.grid.minor.x = element_blank(),
-        plot.title = element_text(size = 12, 
-                                  face = "bold", 
-                                  hjust = 0.5 ))
-ggsave(path = "artefacts/", 
-       filename = "AWS_image_entities_treemap.png")
-
-## Treemap for tf_idf
-incubators_contentANDimages %>% 
-  count(creator, img_object) %>% 
-  left_join(.,incubators_contentANDimages %>% 
-              count(creator, img_object) %>% 
-              group_by(creator) %>% 
-              summarise(total = sum(n))) %>% 
-  bind_tf_idf(img_object, creator, n) %>%
-  group_by(creator) %>%
-  slice_max(tf_idf, n = 10,
-            with_ties = F) %>%
-  ungroup() %>% 
-  treemap(., index = c("creator", "img_object"), vSize = "tf_idf", vColor = "creator") %>% 
-  extract2("tm") %>% 
-  # calculate end coordinates with height and width
-  mutate(x1 = x0 + w,
-         y1 = y0 + h) %>% 
-  # get center coordinates for labels
-  mutate(x = (x0+x1)/2,
-         y = (y0+y1)/2) %>%
-  # mark primary groupings and set boundary thickness
-  mutate(primary_group = ifelse(is.na(img_object), 1.2, .5)) %>% 
+  mutate(primary_group = ifelse(is.na(word), 1.2, .5)) %>% 
   ggplot(aes(xmin = x0, ymin = y0, xmax = x1, ymax = y1)) + 
   # add fill and borders for groups and subgroups
   geom_rect(aes(fill = color, size = primary_group),
@@ -436,18 +391,63 @@ incubators_contentANDimages %>%
   # set thicker lines for group borders
   scale_size(range = range(c(0.5,1.2))) +
   # add labels
-  ggfittext::geom_fit_text(aes(label = img_object), min.size = 1) +
+  ggfittext::geom_fit_text(aes(label = word), min.size = 1) +
   # options
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   theme_void() +
-  ggtitle("TF-IDF Treemap of Uncommon Image Entities by (Unlabeled) Incubators") + 
+  ggtitle("Count Treemap of Words by (Unlabeled) Incubators") + 
   theme(panel.grid.minor.x = element_blank(),
         plot.title = element_text(size = 12, 
                                   face = "bold", 
                                   hjust = 0.5 ))
 ggsave(path = "artefacts/", 
-       filename = "AWS_image_entities_tf_idf_treemap.png")
+       filename = "R_word_treemap.png")
+
+## Treemap for word tf_idf
+unnested_data_filtered_incubators %>% 
+  count(creator, word) %>% 
+  left_join(.,unnested_data_filtered_incubators %>% 
+              count(creator, word) %>% 
+              group_by(creator) %>% 
+              summarise(total = sum(n))) %>% 
+  bind_tf_idf(word, creator, n) %>%
+  group_by(creator) %>%
+  slice_max(tf_idf, n = 10,
+            with_ties = F) %>%
+  ungroup() %>% 
+  treemap(., index = c("creator", "word"), vSize = "tf_idf", vColor = "creator") %>% 
+  extract2("tm") %>% 
+  # calculate end coordinates with height and width
+  mutate(x1 = x0 + w,
+         y1 = y0 + h) %>% 
+  # get center coordinates for labels
+  mutate(x = (x0+x1)/2,
+         y = (y0+y1)/2) %>%
+  # mark primary groupings and set boundary thickness
+  mutate(primary_group = ifelse(is.na(word), 1.2, .5)) %>% 
+  ggplot(aes(xmin = x0, ymin = y0, xmax = x1, ymax = y1)) + 
+  # add fill and borders for groups and subgroups
+  geom_rect(aes(fill = color, size = primary_group),
+            show.legend = FALSE,
+            color = "black", 
+            alpha = .3) +
+  scale_fill_identity() +
+  # set thicker lines for group borders
+  scale_size(range = range(c(0.5,1.2))) +
+  # add labels
+  ggfittext::geom_fit_text(aes(label = word), min.size = 1) +
+  # options
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme_void() +
+  ggtitle("TF-IDF Treemap of Uncommon Words by (Unlabeled) Incubators") + 
+  theme(panel.grid.minor.x = element_blank(),
+        plot.title = element_text(size = 12, 
+                                  face = "bold", 
+                                  hjust = 0.5 ))
+ggsave(path = "artefacts/", 
+       filename = "R_words_tf_idf_treemap.png")
 
 # Topic modeling ----------------------------------------------------------
 
