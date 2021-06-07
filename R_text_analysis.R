@@ -1094,7 +1094,8 @@ bind_rows(unnested_data_en %>%
   scale_fill_manual(values = c(color[1],color[3],color[5],color[7],color[9])) +
   scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
                                                       ' \\1', x), width = 1)) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
 ggsave(path = "artefacts/", 
        filename = "R_all_lexicon_sentiment_incubator_comparison_EN.png")
 
@@ -1131,7 +1132,8 @@ unnested_data_de %>%
   scale_fill_manual(values = c(color[3],color[10])) +
   scale_x_discrete(labels = function(x) str_wrap(gsub('([[:upper:]])', 
                                                       ' \\1', x), width = 1)) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
 ggsave(path = "artefacts/", 
        filename = "R_all_lexicon_sentiment_incubator_comparison_DE.png")
 
